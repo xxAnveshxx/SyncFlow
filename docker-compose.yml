@@ -66,6 +66,26 @@ services:
     depends_on:
       - kafka
       - postgres
-
+  elasticsearch:
+    image: elasticsearch:8.14.0
+    container_name: cdc-elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+  consumer:
+    build:
+      context: ./consumer
+    container_name: cdc-consumer
+    depends_on:
+      - kafka
+      - elasticsearch
+    restart: unless-stopped
+    
 volumes:
   postgres_data:
+  elasticsearch_data:
