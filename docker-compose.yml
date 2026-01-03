@@ -85,6 +85,15 @@ services:
       - kafka
       - elasticsearch
     restart: unless-stopped
+  api:
+    build:
+      context: ./api
+    container_name: cdc-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
     
 volumes:
   postgres_data:
