@@ -1,8 +1,16 @@
 from fastapi import FastAPI, HTTPException, Query # pyright: ignore[reportMissingImports]
 from elasticsearch import Elasticsearch # pyright: ignore[reportMissingImports]
 from typing import Optional
+from fastapi.middleware.cors import CORSMiddleware # pyright: ignore[reportMissingImports]
 
 app = FastAPI(title="SyncFlow API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+)
 
 ES_HOST = "http://elasticsearch:9200"
 es = Elasticsearch([ES_HOST])
