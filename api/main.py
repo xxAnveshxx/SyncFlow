@@ -10,6 +10,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 ES_HOST = "http://elasticsearch:9200"

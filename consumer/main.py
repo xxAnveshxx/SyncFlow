@@ -1,4 +1,5 @@
 import json
+import base64
 from confluent_kafka import Consumer, KafkaError # pyright: ignore[reportMissingImports]
 from elasticsearch import Elasticsearch # pyright: ignore[reportMissingImports]
 
@@ -27,6 +28,30 @@ def create_es_client():
 def get_index_name(topic):
     return topic.split(".")[-1]
 
+def decode_decimal(value,scale=2):
+    if value is None:
+        return None
+    try:
+        decoded_bytes = base64.b64decode(value)
+        num = int.from_bytes(decoded_bytes, byteorder='big', signed=True)
+        return num / (10**scale)
+    except:
+        return value
+    
+def transform_doc(doc, index_name):
+    if doc is None:
+        return None
+    
+    transformed = doc.copy()
+
+    if index_name == "products" and "price" in transformed:
+        transformed["price"] = decode_decimal(transformed["price"], scale=2)
+
+    if index_name == "orders" and "total_amount" in transformed:
+        transformed["total_amount"] = decode_decimal(transformed["total_amount"], scale=2)
+    
+    return transformed
+
 def process_message(msg, es):
     topic = msg.topic()
     index_name = get_index_name(topic)
@@ -42,6 +67,7 @@ def process_message(msg, es):
     if operation == "c" or operation == "r":
         doc = payload.get("after")
         if doc:
+            doc = transform_doc(doc, index_name)
             doc_id = doc.get("id")
             es.index(index=index_name, id=doc_id, document=doc)
             print(f"INDEXED: {index_name}/{doc_id}")
@@ -49,6 +75,7 @@ def process_message(msg, es):
     elif operation == "u":
         doc = payload.get("after")
         if doc:
+            doc = transform_doc(doc, index_name)
             doc_id = doc.get("id")
             es.index(index=index_name, id=doc_id, document=doc)
             print(f"UPDATED: {index_name}/{doc_id}")
